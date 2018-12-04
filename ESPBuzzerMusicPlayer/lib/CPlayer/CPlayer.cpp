@@ -5,7 +5,7 @@
 
 CPlayer::CPlayer()
 {
-    _state = EPlayerState::MAIN_MENU;
+    _server = new CWebServer();
 }
 
 

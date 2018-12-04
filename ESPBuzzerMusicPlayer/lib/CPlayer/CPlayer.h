@@ -1,7 +1,7 @@
 #ifndef PLAYER__H
 #define PLAYER__H
 
-
+#include "CWebServer.h"
 
 enum EPlayerState
 {
@@ -13,12 +13,14 @@ enum EPlayerState
 class CPlayer
 {
     private:
-        EPlayerState _state;
+        CWebServer* _server;
 
 
 
     public:
         CPlayer();
+
+        CWebServer* getServer() { return _server; }
 
 
 };

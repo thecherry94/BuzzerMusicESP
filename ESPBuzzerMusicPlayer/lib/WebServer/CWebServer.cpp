@@ -6,7 +6,7 @@
 
 CWebServer::CWebServer()
 {
-
+    _ready = false;
 }
 
 
@@ -59,7 +59,35 @@ void CWebServer::onWebSocketMessageReceived(AsyncWebSocket* server, AsyncWebSock
         data[len] = 0;
         char* d = (char*)data;
 
-        // JSON PARSING
+        DynamicJsonBuffer buf;
+        JsonObject& obj = buf.parse(d).asObject();
+
+        // Parse error
+        if (!obj.success())
+        {
+            DEBUG_PRINTF("[WebServer] Json parsing error!\n%s", d);
+            return;
+        }
+
+        if (obj.containsKey("type"))
+        {
+            std::string type = obj["type"].asString();
+
+            if (_events.find(type) != _events.end())
+            {
+                _events[type](client, obj);
+            }
+            else
+            {
+                DEBUG_PRINTF("[WebServer] No event handler for WebSocket!\n%s", d);
+                return;
+            }
+        }
+        else
+        {
+            DEBUG_PRINTF("[WebServer] Json wrong format!\n%s", d);
+            return;
+        }
     }
 }
 
@@ -72,16 +100,21 @@ void CWebServer::createSoftAP(std::string ssid, std::string pass)
 
     initHttpServer();
     initWebSockets();
+
+    _ready = true;
 }
 
 
 void CWebServer::onConnectedToAP(bool success)
 {
-    Serial.printf("Local IP: %s", WiFi.localIP().toString());
+    Serial.printf("Local IP: %s\n", WiFi.localIP().toString().c_str());
 
     initHttpServer();
     initWebSockets();
+
+    _ready = true;
 }
+
 
 
 void CWebServer::connectToAP(std::string ssid, std::string pass)
@@ -106,7 +139,7 @@ void* connectAP(void* param)
 
     const char* ssid = p->ssid.c_str();
     const char* pass = p->pass.c_str();
-    Serial.printf("%s | %s", ssid, pass);
+    Serial.printf("%s | %s\n", ssid, pass);
 
     long t_start = millis();
     int numTry = 0;
@@ -116,7 +149,7 @@ void* connectAP(void* param)
     {
         DEBUG_PRINTF("WiFi connection try #%d\n", numTry+1);
 
-        WiFi.begin("Cherry", "4991Pk1994");
+        WiFi.begin(ssid, pass);
         
         while (WiFi.status() != WL_CONNECTED)
         {
@@ -132,8 +165,8 @@ void* connectAP(void* param)
         connection_success = WiFi.status() == WL_CONNECTED;    
     }
     
-    delete p;
-    p = nullptr;
+    //delete p;
+    //p = nullptr;
 
     p->onDone(connection_success);
     return 0;
@@ -158,6 +191,7 @@ void CWebServer::reset()
 
     WiFi.disconnect();
     _events.clear();
+    _ready = false;
 }
 
 

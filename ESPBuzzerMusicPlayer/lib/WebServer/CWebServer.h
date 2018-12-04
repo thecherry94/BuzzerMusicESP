@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Arduino.h>
 #include "ESPAsyncWebServer.h"
 #include "ArduinoJson.h"
@@ -37,7 +39,7 @@ struct SThread
     pthread_t thread;
 };
 
-typedef std::function<void(AsyncWebSocketClient*, JsonVariant&)> WebSocketEventHandler_t;
+typedef std::function<void(AsyncWebSocketClient*, JsonObject&)> WebSocketEventHandler_t;
 
 class CWebServer
 {
@@ -57,6 +59,8 @@ class CWebServer
 
         void onWebSocketMessageReceived(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
 
+        bool _ready;
+
     public:
         CWebServer();
 
@@ -66,6 +70,7 @@ class CWebServer
         void addURL(std::string url, ArRequestHandlerFunction);
         void addWebSocketEvent(std::string type, WebSocketEventHandler_t);
         
+        bool isReady() { return _ready; }
 
         void reset();
 };
